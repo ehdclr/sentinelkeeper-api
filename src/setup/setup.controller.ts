@@ -96,7 +96,6 @@ export class SetupController {
       } as DatabaseConfig;
 
       const result = await this.configService.testConnection(tempConfig);
-
       if (!result.success) {
         return ResponseBuilder.error(
           `${setupDto.type} 연결 테스트 실패: ${result.error}`,
@@ -112,12 +111,7 @@ export class SetupController {
         `✅ ${setupDto.type} 연결 성공`,
       );
     } catch (error: any) {
-      return {
-        success: false,
-        message: `❌ 연결 테스트 실패: ${error.message}`,
-        type: setupDto.type,
-        error: error.message,
-      };
+      return ResponseBuilder.error(`❌ 연결 테스트 실패: ${error.message}`);
     }
   }
 
