@@ -205,4 +205,11 @@ export class SetupController {
       };
     }
   }
+
+  @Get('examples')
+  getExample() {
+    return {
+      message: 'Hello, World!',
+    };
+  }
 }
