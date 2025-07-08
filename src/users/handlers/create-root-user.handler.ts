@@ -1,14 +1,18 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler, EventBus } from '@nestjs/cqrs';
 import { Injectable } from '@nestjs/common';
 import { CreateRootUserCommand } from '../commands/create-root-user.command';
-import { UserService } from '../services/user.service';
+import { UserDomainService } from '../services/user-domain.service';
+import { UserCreatedEvent } from '../events/user-created.event';
 
 @Injectable()
 @CommandHandler(CreateRootUserCommand)
 export class CreateRootUserHandler
   implements ICommandHandler<CreateRootUserCommand>
 {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userDomainService: UserDomainService,
+    private readonly eventBus: EventBus,
+  ) {}
 
   async execute(
     command: CreateRootUserCommand,
@@ -16,13 +20,15 @@ export class CreateRootUserHandler
     try {
       const { username, password, email } = command;
 
-      // 루트 사용자 생성 (UserService 내부에서 비밀번호 해싱 처리)
-      const user = await this.userService.createUser({
+      // 도메인 서비스를 통한 루트 사용자 생성
+      const user = await this.userDomainService.createRootUser({
         username,
-        password, // 원본 비밀번호 전달
+        password,
         email,
-        isSystemAdmin: true,
       });
+
+      // 이벤트 발행 (트랜잭션 성공 후)
+      this.eventBus.publish(new UserCreatedEvent(user.id, user.username));
 
       return {
         success: true,
