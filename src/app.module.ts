@@ -6,6 +6,7 @@ import { SetupModule } from './setup/setup.module';
 import { HealthModule } from './health/health.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     DatabaseModule.forRoot(),
     SetupModule,
     HealthModule,
+    UsersModule,
   ],
   providers: [
     {
