@@ -1,98 +1,162 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+// ==========================================
+// 🎯 API 사용 플로우 완전 가이드
+// ==========================================
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+/*
+=== 초기 설치 프로세스 ===
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Step 0: 상태 확인
+GET /api/installation/status
+Response: {
+  "isInstalled": false,
+  "currentStep": "database",
+  "databaseConnected": false,
+  "databaseType": null,
+  "supportedDatabases": ["postgres", "sqlite", "mysql"]
+}
 
-## Description
+Step 1-1: DB 연결 테스트
+POST /api/installation/test-connection
+Body: {
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "database": "sentinel",
+  "username": "admin",
+  "password": "password"
+}
+Response: {
+  "success": true,
+  "message": "Database connection successful!"
+}
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Step 1-2: DB 설정 완료
+POST /api/installation/setup-database
+Body: {
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "database": "sentinel",
+  "username": "admin",
+  "password": "password"
+}
+Response: {
+  "success": true,
+  "nextStep": "account",
+  "message": "Database configured successfully! Now create your admin account."
+}
 
-## Project setup
+Step 2: 상태 확인 (중간)
+GET /api/installation/status
+Response: {
+  "isInstalled": false,
+  "currentStep": "account",
+  "databaseConnected": true,
+  "databaseType": "postgres",
+  "supportedDatabases": ["postgres", "sqlite", "mysql"]
+}
 
-```bash
-$ npm install
-```
+Step 2: Root 계정 생성
+POST /api/installation/create-account
+Body: {
+  "username": "admin",
+  "email": "admin@example.com",
+  "password": "AdminPassword123!",
+  "confirmPassword": "AdminPassword123!"
+}
+Response: {
+  "success": true,
+  "message": "Installation completed successfully! You can now log in."
+}
 
-## Compile and run the project
+Step 3: 설치 완료 확인
+GET /api/installation/status
+Response: {
+  "isInstalled": true,
+  "currentStep": "completed",
+  "databaseConnected": true,
+  "databaseType": "postgres",
+  "supportedDatabases": ["postgres", "sqlite", "mysql"]
+}
 
-```bash
-# development
-$ npm run start
+=== SQLite 예시 ===
 
-# watch mode
-$ npm run start:dev
+POST /api/installation/test-connection
+Body: {
+  "type": "sqlite",
+  "database": "sentinel",
+  "filename": "/app/data/sentinel.db"
+}
 
-# production mode
-$ npm run start:prod
-```
+POST /api/installation/setup-database
+Body: {
+  "type": "sqlite",
+  "database": "sentinel",
+  "filename": "/app/data/sentinel.db"
+}
 
-## Run tests
+=== 에러 케이스 ===
 
-```bash
-# unit tests
-$ npm run test
+연결 실패:
+POST /api/installation/test-connection
+Response: {
+  "success": false,
+  "message": "Failed to connect to database. Please check your settings."
+}
 
-# e2e tests
-$ npm run test:e2e
+잘못된 단계:
+POST /api/installation/create-account (DB 설정 안된 상태)
+Response: 400 Bad Request
+{
+  "message": "Database must be connected first"
+}
 
-# test coverage
-$ npm run test:cov
-```
+=== 파일 시스템 구조 ===
 
-## Deployment
+프로젝트 루트/
+├── src/                    # 소스 코드
+├── data/                   # 데이터 디렉토리 (런타임 생성)
+│   ├── temp-db-config.json # Step 1 완료 후 생성
+│   ├── db-config.json      # Step 2 완료 후 생성 (최종)
+│   └── sentinel.db         # SQLite 파일 (SQLite 선택시)
+├── dist/                   # 빌드 결과물
+└── package.json
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+data/db-config.json (최종 설정 파일):
+{
+  "database": {
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5432,
+    "database": "sentinel",
+    "username": "admin"
+  },
+  "installedAt": "2025-01-07T12:34:56.789Z",
+  "version": "1.0.0"
+}
+*/
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+// ==========================================
+// 🎉 완성된 기능들
+// ==========================================
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+/*
+✅ Zod 우선 아키텍처
+✅ 2단계 설치 프로세스
+✅ 3개 DB 지원 (postgres/sqlite/mysql)
+✅ 연결 테스트 기능
+✅ CQRS 패턴
+✅ 자동 DTO 생성 (nestjs-zod)
+✅ Swagger 문서화
+✅ 타입 안전성 (TypeScript + Zod)
+✅ 설정 파일 관리
+✅ 에러 처리
+✅ 상태 관리
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+다음 단계:
+🔄 Auth 도메인 구현
+🔄 Dashboard 도메인 구현
+🔄 프론트엔드 연결
+🔄 Docker 설정
+🔄 배포 준비
+*/
