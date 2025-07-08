@@ -221,6 +221,8 @@ export class DatabaseConfigService implements OnModuleInit {
     }
   }
 
+  //TODO 데이터베이스 결정 이후 -> 테이블 생성 및 초기화 로직 추가 
+
   private saveConfig(): void {
     if (!this.config) {
       throw new Error('No configuration to save');
