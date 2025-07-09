@@ -1,146 +1,115 @@
+// src/users/repositories/user.repository.ts
 import { Injectable } from '@nestjs/common';
-import { DatabaseConfigService } from '../../database/config/database-config.service';
-import { User } from '../entities/user.entity';
+import { DatabaseConfigService } from '../../database/services/database-config.service';
+import { eq, count, sql } from 'drizzle-orm';
+import { getUsersTable } from '../schemas/user.schema'; // 스키마 파일 경로에 맞게 수정
+import { DatabaseConfig } from '@/database/types/database.type';
 
 @Injectable()
 export class UserRepository {
   constructor(private readonly databaseConfigService: DatabaseConfigService) {}
 
-  async create(userData: {
-    username: string;
-    passwordHash: string;
-    email?: string;
-    isSystemAdmin?: boolean;
-  }): Promise<User> {
+  private async getDb() {
+    return await this.databaseConfigService.getDb();
+  }
+
+  // 현재 DB 타입에 맞는 users 테이블 스키마 가져오기
+  private getUsersSchema() {
     const config = this.databaseConfigService.getConfig();
-    const connection = await this.createConnection(config);
+    return getUsersTable(config.type);
+  }
 
-    const { username, passwordHash, email, isSystemAdmin = false } = userData;
+  async create(userData: any) {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
 
-    switch (config.type) {
-      case 'sqlite':
-        const stmt = connection.raw.prepare(
-          'INSERT INTO users (username, password_hash, email, is_system_admin) VALUES (?, ?, ?, ?)',
-        );
-        const result = stmt.run(
-          username,
-          passwordHash,
-          email,
-          isSystemAdmin ? 1 : 0,
-        );
-        return this.findById(result.lastInsertRowid);
+    return db.insert(users).values(userData).returning();
+  }
 
+  // 메서드명을 일관성 있게 수정
+  async findByUsername(username: string) {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+
+    return db.select().from(users).where(eq(users.username, username)).limit(1);
+  }
+
+  async findById(id: number) {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+
+    return db.select().from(users).where(eq(users.id, id)).limit(1);
+  }
+
+  async getUserCount() {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+
+    return db.select({ count: count() }).from(users);
+  }
+
+  async updateUser(id: number, updateData: any) {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+
+    return db.update(users).set(updateData).where(eq(users.id, id)).returning();
+  }
+
+  async deleteUser(id: number) {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+
+    return db.delete(users).where(eq(users.id, id)).returning();
+  }
+
+  async findAllUsers(limit: number = 10, offset: number = 0) {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+
+    return db.select().from(users).limit(limit).offset(offset);
+  }
+
+  async findActiveUsers() {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+
+    return db.select().from(users).where(eq(users.isActive, true));
+  }
+
+  async findSystemAdmins() {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+
+    return db.select().from(users).where(eq(users.isSystemAdmin, true));
+  }
+
+  // 특정 DB에서만 작동하는 메서드 예시
+  async findUsersByEmailDomain(domain: string) {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+    const config = this.databaseConfigService.getConfig();
+
+    // DB별로 다른 쿼리 방식 사용 가능
+    switch (config.type as string) {
       case 'postgres':
-        const pgResult = await connection.raw.query(
-          'INSERT INTO users (username, password_hash, email, is_system_admin) VALUES ($1, $2, $3, $4) RETURNING *',
-          [username, passwordHash, email, isSystemAdmin],
-        );
-        return this.mapToUser(pgResult[0]);
+        return db
+          .select()
+          .from(users)
+          .where(sql`${users.email} LIKE ${`%@${domain}`}`);
+      case 'sqlite':
+        return db
+          .select()
+          .from(users)
+          .where(sql`${users.email} LIKE ${`%@${domain}`}`);
 
       case 'mysql':
-        const [mysqlResult] = await connection.raw.execute(
-          'INSERT INTO users (username, password_hash, email, is_system_admin) VALUES (?, ?, ?, ?)',
-          [username, passwordHash, email, isSystemAdmin ? 1 : 0],
-        );
-        return this.findById(mysqlResult.insertId);
+        return db
+          .select()
+          .from(users)
+          .where(sql`${users.email} LIKE ${`%@${domain}`}`);
+
+      default:
+        throw new Error(`Unsupported database type: ${config.type}`);
     }
-  }
-
-  async findById(id: number): Promise<User | null> {
-    const config = this.databaseConfigService.getConfig();
-    const connection = await this.createConnection(config);
-
-    switch (config.type) {
-      case 'sqlite':
-        const stmt = connection.raw.prepare('SELECT * FROM users WHERE id = ?');
-        const result = stmt.get(id);
-        return result ? this.mapToUser(result) : null;
-
-      case 'postgres':
-        const pgResult = await connection.raw.query(
-          'SELECT * FROM users WHERE id = $1',
-          [id],
-        );
-        return pgResult[0] ? this.mapToUser(pgResult[0]) : null;
-
-      case 'mysql':
-        const [rows] = await connection.raw.execute(
-          'SELECT * FROM users WHERE id = ?',
-          [id],
-        );
-        return rows[0] ? this.mapToUser(rows[0]) : null;
-    }
-  }
-
-  async findByUsername(username: string): Promise<User | null> {
-    const config = this.databaseConfigService.getConfig();
-    const connection = await this.createConnection(config);
-
-    switch (config.type) {
-      case 'sqlite':
-        const stmt = connection.raw.prepare(
-          'SELECT * FROM users WHERE username = ?',
-        );
-        const result = stmt.get(username);
-        return result ? this.mapToUser(result) : null;
-
-      case 'postgres':
-        const pgResult = await connection.raw.query(
-          'SELECT * FROM users WHERE username = $1',
-          [username],
-        );
-        return pgResult[0] ? this.mapToUser(pgResult[0]) : null;
-
-      case 'mysql':
-        const [rows] = await connection.raw.execute(
-          'SELECT * FROM users WHERE username = ?',
-          [username],
-        );
-        return rows[0] ? this.mapToUser(rows[0]) : null;
-    }
-  }
-
-  async countSystemAdmins(): Promise<number> {
-    const config = this.databaseConfigService.getConfig();
-    const connection = await this.createConnection(config);
-
-    switch (config.type) {
-      case 'sqlite':
-        const result = connection.raw
-          .prepare(
-            'SELECT COUNT(*) as count FROM users WHERE is_system_admin = 1',
-          )
-          .get();
-        return result.count;
-
-      case 'postgres':
-        const pgResult = await connection.raw.query(
-          'SELECT COUNT(*) as count FROM users WHERE is_system_admin = true',
-        );
-        return parseInt(pgResult[0].count);
-
-      case 'mysql':
-        const [rows] = await connection.raw.execute(
-          'SELECT COUNT(*) as count FROM users WHERE is_system_admin = 1',
-        );
-        return rows[0].count;
-    }
-  }
-
-  private mapToUser(dbUser: any): User {
-    return {
-      id: dbUser.id,
-      username: dbUser.username,
-      passwordHash: dbUser.password_hash,
-      email: dbUser.email,
-      isActive: dbUser.is_active,
-      isSystemAdmin: dbUser.is_system_admin,
-      createdAt: dbUser.created_at,
-      updatedAt: dbUser.updated_at,
-    };
-  }
-
-  private async createConnection(config: any) {
-    return await this.databaseConfigService['createTestConnection'](config);
   }
 }

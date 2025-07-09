@@ -1,32 +1,27 @@
-import { Module, Global, DynamicModule, Provider } from '@nestjs/common';
-import { DatabaseConfigService } from './config/database-config.service';
-import { DatabaseFactory } from './factory/database.factory';
+// src/database/database.module.ts
+import { Module } from '@nestjs/common';
+import { DatabaseConfigService } from './services/database-config.service';
+import { ConfigManagerService } from './services/config-manager.service';
+import { ConnectionManagerService } from './services/connection-manager.service';
+import { PostgresStrategy } from './strategies/postgres.strategy';
+import { SQLiteStrategy } from './strategies/sqlite.strategy';
+import { MySQLStrategy } from './strategies/mysql.strategy';
 
-export const DATABASE_CONNECTION = 'DATABASE_CONNECTION';
+@Module({
+  providers: [
+    // 전략 패턴 구현체들
+    PostgresStrategy,
+    SQLiteStrategy,
+    MySQLStrategy,
 
-@Global()
-@Module({})
-export class DatabaseModule {
-  static forRoot(): DynamicModule {
-    const databaseProvider: Provider = {
-      provide: DATABASE_CONNECTION,
-      useFactory: async (
-        configService: DatabaseConfigService,
-        factory: DatabaseFactory,
-      ) => {
-        // 설정이 없는 경우에는 null 반환 (setup 단계에서는 연결 불필요)
-        if (!configService.isConfigured()) {
-          return null;
-        }
-        return await factory.createDatabaseConnection();
-      },
-      inject: [DatabaseConfigService, DatabaseFactory],
-    };
-
-    return {
-      module: DatabaseModule,
-      providers: [DatabaseConfigService, DatabaseFactory, databaseProvider],
-      exports: [DATABASE_CONNECTION, DatabaseConfigService],
-    };
-  }
-}
+    // 핵심 서비스들
+    ConfigManagerService,
+    ConnectionManagerService,
+    DatabaseConfigService,
+  ],
+  exports: [
+    DatabaseConfigService,
+    ConnectionManagerService, // 다른 모듈에서 직접 연결 관리가 필요한 경우
+  ],
+})
+export class DatabaseModule {}

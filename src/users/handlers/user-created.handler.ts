@@ -1,11 +1,11 @@
 import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { Injectable } from '@nestjs/common';
-import { UserCreatedEvent } from './user-created.event';
+import { UserCreatedEvent } from '../events/user-created.event';
 
 @Injectable()
 @EventsHandler(UserCreatedEvent)
 export class UserCreatedHandler implements IEventHandler<UserCreatedEvent> {
-  async handle(event: UserCreatedEvent) {
+  handle(event: UserCreatedEvent) {
     console.log(
       `사용자 생성 이벤트 처리: ${event.username} (ID: ${event.userId})`,
     );

@@ -7,3 +7,12 @@ export interface ApiResponse<T> {
   timestamp: string;
   path: string;
 }
+
+export interface ApiErrorResponse {
+  success: false;
+  message: string;
+  error?: string;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+}

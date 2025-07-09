@@ -11,7 +11,7 @@ export class CheckRootUserExistsHandler
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(): Promise<{ exists: boolean; count: number }> {
-    const count = await this.userRepository.countSystemAdmins();
+    const count = await this.userRepository.getUserCount();
     return {
       exists: count > 0,
       count,

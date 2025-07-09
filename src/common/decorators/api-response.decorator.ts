@@ -20,7 +20,6 @@ export class ResponseBuilder {
     error?: string,
     statusCode?: number,
   ): Omit<ApiResponse<any>, 'timestamp' | 'path'> {
-
     return {
       statusCode: statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       success: false,

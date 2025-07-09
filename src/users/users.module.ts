@@ -1,28 +1,41 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
-import { UserDomainService } from './services/user-domain.service';
-import { UserHashService } from './services/user-hash.service';
+
+import { UsersController } from './users.controller';
+import { UserService } from './services/user.service';
 import { UserRepository } from './repositories/user.repository';
+import { DatabaseConfigService } from '../database/services/database-config.service';
 import { CreateRootUserHandler } from './handlers/create-root-user.handler';
 import { CheckRootUserExistsHandler } from './handlers/check-root-user-exists.handler';
-import { UserCreatedHandler } from './events/user-created.handler';
-import { UsersController } from './controllers/users.controller';
+import { UserCreatedHandler } from './handlers/user-created.handler';
+import { DatabaseModule } from '@/database/database.module';
+import { ConfigModule } from '@nestjs/config';
+import { ConfigManagerService } from '@/database/services/config-manager.service';
+import { ConnectionManagerService } from '@/database/services/connection-manager.service';
+import { PostgresStrategy } from '@/database/strategies/postgres.strategy';
+import { SQLiteStrategy } from '@/database/strategies/sqlite.strategy';
+import { MySQLStrategy } from '@/database/strategies/mysql.strategy';
 
 const CommandHandlers = [CreateRootUserHandler];
 const QueryHandlers = [CheckRootUserExistsHandler];
 const EventHandlers = [UserCreatedHandler];
 
 @Module({
-  imports: [CqrsModule],
+  imports: [CqrsModule, DatabaseModule, ConfigModule],
   controllers: [UsersController],
   providers: [
-    UserDomainService,
-    UserHashService,
+    UserService,
     UserRepository,
+    DatabaseConfigService,
+    ConfigManagerService,
+    ConnectionManagerService,
+    PostgresStrategy,
+    SQLiteStrategy,
+    MySQLStrategy,
     ...CommandHandlers,
     ...QueryHandlers,
     ...EventHandlers,
   ],
-  exports: [UserDomainService, UserHashService, UserRepository],
+  exports: [UserService, UserRepository],
 })
 export class UsersModule {}

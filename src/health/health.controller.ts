@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { DatabaseConfigService } from '../database/config/database-config.service';
+import { Controller, Get, HttpStatus } from '@nestjs/common';
+import { DatabaseConfigService } from '../database/services/database-config.service';
 import { ResponseBuilder } from '../common/decorators/api-response.decorator';
 
 @Controller('health')
@@ -11,13 +11,10 @@ export class HealthController {
     const status = this.configService.getSetupStatus();
 
     if (!status.configured) {
-      return ResponseBuilder.success(
-        {
-          status: '설정 필요',
-          database: null,
-          setup_url: '/setup/database',
-        },
+      return ResponseBuilder.error(
+        '설정 필요',
         '데이터 베이스 설정이 필요합니다.',
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -61,7 +58,7 @@ export class HealthController {
       configured: true,
       type: config.type,
       database: config.database,
-      host: config.host || 'N/A',
+      host: config.type === 'sqlite' ? 'N/A' : config.host || 'N/A',
       connection: {
         success: connectionTest.success,
         error: connectionTest.error || null,

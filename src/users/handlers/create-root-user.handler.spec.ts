@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EventBus } from '@nestjs/cqrs';
 import { CreateRootUserHandler } from './create-root-user.handler';
 import { CreateRootUserCommand } from '../commands/create-root-user.command';
-import { UserDomainService } from '../services/user-domain.service';
+import { UserDomainService } from '../services/user.service';
 import { UserCreatedEvent } from '../events/user-created.event';
 
 describe('CreateRootUserHandler', () => {
