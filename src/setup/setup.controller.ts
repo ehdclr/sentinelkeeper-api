@@ -48,10 +48,52 @@ export class SetupController {
 
     return ResponseBuilder.success(
       {
-        database: dbStatus.type,
-        rootUserExists,
+        databaseSetupStatus: dbStatus.configured,
+        rootAccountExists: rootUserExists,
       },
       '초기 설정이 완료되었습니다.',
+      HttpStatus.OK,
+    );
+  }
+
+  @Get('status/db')
+  getSetupStatusDb() {
+    const dbStatus = this.configService.getSetupStatus();
+
+    if (!dbStatus.configured) {
+      return ResponseBuilder.error(
+        '데이터 베이스 설정이 필요합니다.',
+        '데이터 베이스 설정이 필요합니다.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return ResponseBuilder.success(
+      {
+        databaseSetupStatus: dbStatus.configured,
+      },
+      '데이터 베이스 설정 상태',
+      HttpStatus.OK,
+    );
+  }
+
+  @Get('status/root')
+  async getSetupStatusRoot() {
+    const rootUserExists = await this.userService.checkRootUserExists();
+
+    if (!rootUserExists) {
+      return ResponseBuilder.error(
+        '루트 계정 생성이 필요합니다.',
+        '루트 계정 생성이 필요합니다.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return ResponseBuilder.success(
+      {
+        rootAccountExists: rootUserExists,
+      },
+      '루트 계정 상태',
       HttpStatus.OK,
     );
   }
