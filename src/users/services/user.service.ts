@@ -21,6 +21,7 @@ export class UserService {
       const existingUser = await this.userRepository.findByUsername(
         data.username,
       );
+
       if (existingUser) {
         throw new ConflictException('시스템 관리자 계정이 이미 존재합니다.');
       }

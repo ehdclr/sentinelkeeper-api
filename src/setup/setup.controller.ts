@@ -24,38 +24,6 @@ export class SetupController {
     private userService: UserService,
   ) {}
 
-  @Get('status')
-  async getSetupStatus() {
-    const dbStatus = this.configService.getSetupStatus();
-
-    if (!dbStatus.configured) {
-      return ResponseBuilder.error(
-        '데이터 베이스 설정이 필요합니다.',
-        '데이터 베이스 설정이 필요합니다.',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const rootUserExists = await this.userService.checkRootUserExists();
-
-    if (!rootUserExists) {
-      return ResponseBuilder.error(
-        '루트 계정 생성이 필요합니다.',
-        '루트 계정 생성이 필요합니다.',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    return ResponseBuilder.success(
-      {
-        databaseSetupStatus: dbStatus.configured,
-        rootAccountExists: rootUserExists,
-      },
-      '초기 설정이 완료되었습니다.',
-      HttpStatus.OK,
-    );
-  }
-
   @Get('status/db')
   getSetupStatusDb() {
     const dbStatus = this.configService.getSetupStatus();
@@ -67,10 +35,11 @@ export class SetupController {
         HttpStatus.BAD_REQUEST,
       );
     }
+    console.log('🔍 데이터 베이스 설정 상태:', dbStatus);
 
     return ResponseBuilder.success(
       {
-        databaseSetupStatus: dbStatus.configured,
+        databaseSetupStatus: dbStatus,
       },
       '데이터 베이스 설정 상태',
       HttpStatus.OK,

@@ -30,8 +30,13 @@ export class UserRepository {
   async findByUsername(username: string) {
     const db = await this.getDb();
     const users = this.getUsersSchema();
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1);
 
-    return db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
   }
 
   async findById(id: number) {

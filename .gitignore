@@ -63,3 +63,9 @@ database-config.json
 .database-lock
 *.debug
 /data
+
+
+# 
+/keys
+/recovery-keys
+*.pem

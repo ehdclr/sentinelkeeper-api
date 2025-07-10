@@ -64,7 +64,12 @@ export class UsersController {
       'Content-Disposition',
       `attachment; filename="root-user-${createUserDto.username}.pem"`,
     );
-    res.setHeader('X-Setup-Response', JSON.stringify(result));
+    const encodedResponse = Buffer.from(
+      JSON.stringify(result),
+    ).toString('base64');
+    res.setHeader('X-Setup-Response', encodedResponse);
+
+    res.send(result);
 
     return result;
   }

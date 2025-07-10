@@ -17,9 +17,18 @@ export const CreateRootUserResponseSchema = z.object({
   pemFilePath: z.string(),
 });
 
-export type CreateRootUserResponse = z.infer<
-  typeof CreateRootUserResponseSchema
->;
+export interface CreateRootUserResponse {
+  user: {
+    // id: number;
+    username: string;
+    email: string | null;
+    isSystemAdmin: boolean;
+    createdAt: Date;
+  };
+  pemKey: string;
+  pemFilePath?: string;
+  message: string;
+}
 
 // 사용자 정보 응답
 export const UserInfoResponseSchema = z.object({
