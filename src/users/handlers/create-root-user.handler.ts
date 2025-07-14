@@ -1,14 +1,23 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Logger, HttpStatus } from '@nestjs/common';
+import { HttpStatus, Logger } from '@nestjs/common';
 import { CreateRootUserCommand } from '../commands/create-root-user.command';
 import { UserService } from '../services/user.service';
-import { PemKeyService } from '../../common/services/pem-key.service';
-import { ResponseBuilder } from '../../common/decorators/api-response.decorator';
+import { ResponseBuilder } from '@/common/decorators/api-response.decorator';
 import {
   ApiResponse,
   ApiErrorResponse,
-} from '../../common/interfaces/response.interface';
-import { CreateRootUserResponse } from '../dto/user.response.dto';
+} from '@/common/interfaces/response.interface';
+
+export interface CreateRootUserResponse {
+  user: {
+    username: string;
+    email: string | null;
+    isSystemRoot: boolean;
+    createdAt: Date;
+  };
+  pemKey: string;
+  message: string;
+}
 
 @CommandHandler(CreateRootUserCommand)
 export class CreateRootUserHandler
@@ -16,48 +25,30 @@ export class CreateRootUserHandler
 {
   private readonly logger = new Logger(CreateRootUserHandler.name);
 
-  constructor(
-    private readonly userService: UserService,
-    private readonly pemKeyService: PemKeyService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   async execute(
     command: CreateRootUserCommand,
   ): Promise<ApiResponse<CreateRootUserResponse> | ApiErrorResponse> {
     try {
-      // 1. 루트 사용자 생성
-      const user = await this.userService.createRootUser({
+      const result = await this.userService.createRootUser({
         username: command.username,
         password: command.password,
         email: command.email,
       });
 
-      // 2. PEM 키 생성 (userId 포함)
-      const pemKey = this.pemKeyService.generateRootPemKey(
-        command.username,
-        command.email,
-      );
-
-      // 3. PEM 키 파일 저장
-      const pemFilePath = await this.pemKeyService.savePemKey(
-        command.username,
-        pemKey,
-      );
-
       const responseData: CreateRootUserResponse = {
         user: {
-          username: user.username,
-          email: user.email,
-          isSystemAdmin: user.isSystemAdmin,
-          createdAt: user.createdAt,
+          username: result.user.username,
+          email: result.user.email,
+          isSystemRoot: result.user.isSystemRoot,
+          createdAt: result.user.createdAt,
         },
-        pemKey,
-        pemFilePath,
+        pemKey: result.pemKey,
         message:
           '루트 사용자가 성공적으로 생성되었습니다. PEM 키를 안전한 곳에 보관하세요.',
       };
 
-      // ResponseBuilder 결과에 timestamp와 path 추가
       const response = ResponseBuilder.success(
         responseData,
         '루트 사용자 생성 및 복구 키 생성이 완료되었습니다.',

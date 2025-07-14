@@ -85,7 +85,7 @@ export class UserRepository {
     const db = await this.getDb();
     const users = this.getUsersSchema();
 
-    return db.select().from(users).where(eq(users.isSystemAdmin, true));
+    return db.select().from(users).where(eq(users.isSystemRoot, true));
   }
 
   // 특정 DB에서만 작동하는 메서드 예시
@@ -116,5 +116,31 @@ export class UserRepository {
       default:
         throw new Error(`Unsupported database type: ${config.type}`);
     }
+  }
+
+  async findByRecoveryKeyId(recoveryKeyId: string) {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.recoveryKeyId, recoveryKeyId))
+      .limit(1);
+
+    return result[0];
+  }
+
+  async updatePassword(id: number, hashedPassword: string) {
+    const db = await this.getDb();
+    const users = this.getUsersSchema();
+
+    return db
+      .update(users)
+      .set({
+        password: hashedPassword,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
   }
 }

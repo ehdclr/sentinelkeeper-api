@@ -12,7 +12,7 @@ export type ExistsUserResponse = z.infer<typeof ExistsUserResponseSchema>;
 export const CreateRootUserResponseSchema = z.object({
   username: z.string(),
   email: z.string().optional(),
-  isSystemAdmin: z.boolean(),
+  isSystemRoot: z.boolean(),
   pemKey: z.string(),
   pemFilePath: z.string(),
 });
@@ -22,7 +22,7 @@ export interface CreateRootUserResponse {
     // id: number;
     username: string;
     email: string | null;
-    isSystemAdmin: boolean;
+    isSystemRoot: boolean;
     createdAt: Date;
   };
   pemKey: string;
@@ -36,7 +36,7 @@ export const UserInfoResponseSchema = z.object({
   username: z.string(),
   email: z.string().nullable(),
   isActive: z.boolean(),
-  isSystemAdmin: z.boolean(),
+  isSystemRoot: z.boolean(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -51,6 +51,7 @@ export const UserHealthResponseSchema = z.object({
   endpoints: z.object({
     rootStatus: z.string(),
     createRoot: z.string(),
+    resetPassword: z.string(),
     health: z.string(),
   }),
 });

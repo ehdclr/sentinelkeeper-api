@@ -40,36 +40,25 @@ export class CryptoService {
   }
 
   /**
-   * AES-256-GCM 암호화
+   * 단순 AES-256-GCM 암호화 (마스터키 직접 사용)
    */
-  encrypt(
-    plaintext: string,
-    masterKey: string,
-  ): {
-    encrypted: string;
-    salt: string;
-    iv: string;
-    tag: string;
-  } {
+  encryptSimple(plaintext: string, masterKey: string): string {
     try {
-      const salt = this.generateSalt();
+      // 마스터키를 32바이트로 해싱
+      const key = createHash('sha256').update(masterKey).digest();
       const iv = randomBytes(this.IV_LENGTH);
-      const key = this.deriveKey(masterKey, salt);
 
       const cipher = createCipheriv(this.ALGORITHM, key, iv);
-      cipher.setAAD(Buffer.from(salt, 'hex'));
 
       let encrypted = cipher.update(plaintext, 'utf8', 'hex');
       encrypted += cipher.final('hex');
 
       const tag = cipher.getAuthTag();
 
-      return {
-        encrypted,
-        salt,
-        iv: iv.toString('hex'),
-        tag: tag.toString('hex'),
-      };
+      // IV + Tag + Encrypted 를 하나의 문자열로 결합
+      const combined = iv.toString('hex') + tag.toString('hex') + encrypted;
+
+      return Buffer.from(combined, 'hex').toString('base64');
     } catch (error) {
       this.logger.error('암호화 실패:', error);
       throw new Error('암호화 처리 중 오류가 발생했습니다.');
@@ -77,29 +66,34 @@ export class CryptoService {
   }
 
   /**
-   * AES-256-GCM 복호화
+   * 단순 AES-256-GCM 복호화
    */
-  decrypt(
-    encryptedData: {
-      encrypted: string;
-      salt: string;
-      iv: string;
-      tag: string;
-    },
-    masterKey: string,
-  ): string {
+  decryptSimple(encryptedString: string, masterKey: string): string {
     try {
-      const key = this.deriveKey(masterKey, encryptedData.salt);
+      // Base64 디코딩
+      const combined = Buffer.from(encryptedString, 'base64').toString('hex');
+
+      // 구성 요소 분리
+      const ivHex = combined.substring(0, this.IV_LENGTH * 2);
+      const tagHex = combined.substring(
+        this.IV_LENGTH * 2,
+        (this.IV_LENGTH + this.TAG_LENGTH) * 2,
+      );
+      const encryptedHex = combined.substring(
+        (this.IV_LENGTH + this.TAG_LENGTH) * 2,
+      );
+
+      // 마스터키를 32바이트로 해싱
+      const key = createHash('sha256').update(masterKey).digest();
 
       const decipher = createDecipheriv(
         this.ALGORITHM,
         key,
-        Buffer.from(encryptedData.iv, 'hex'),
+        Buffer.from(ivHex, 'hex'),
       );
-      decipher.setAAD(Buffer.from(encryptedData.salt, 'hex'));
-      decipher.setAuthTag(Buffer.from(encryptedData.tag, 'hex'));
+      decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
 
-      let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
+      let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
 
       return decrypted;

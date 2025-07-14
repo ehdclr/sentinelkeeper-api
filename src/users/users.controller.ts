@@ -10,22 +10,26 @@ import {
 import { Response } from 'express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CreateRootUserCommand } from './commands/create-root-user.command';
+import { ResetRootPasswordCommand } from './commands/reset-root-password.command';
 import { CheckRootUserExistsQuery } from './queries/check-root-user-exists.query';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { ResponseBuilder } from '../common/decorators/api-response.decorator';
 import {
   ExistsUserResponse,
   UserHealthResponse,
-  CreateRootUserResponse,
 } from './dto/user.response.dto';
 import {
   CreateUserRequest,
   CreateUserRequestSchema,
+  ResetPasswordRequest,
+  ResetPasswordRequestSchema,
 } from './dto/user.request.dto';
 import {
   ApiResponse,
   ApiErrorResponse,
 } from '../common/interfaces/response.interface';
+import { CreateRootUserResponse } from './handlers/create-root-user.handler';
+import { ResetPasswordResponse } from './handlers/reset-root-password.handler';
 
 @Controller('users')
 export class UsersController {
@@ -38,40 +42,53 @@ export class UsersController {
   async getRootUserStatus(): Promise<
     ApiResponse<ExistsUserResponse> | ApiErrorResponse
   > {
-    const result: ApiResponse<ExistsUserResponse> | ApiErrorResponse =
-      await this.queryBus.execute(new CheckRootUserExistsQuery());
-
-    return result;
+    return await this.queryBus.execute(new CheckRootUserExistsQuery());
   }
 
-  //! root 계정
   @Post('root')
   @UsePipes(new ZodValidationPipe(CreateUserRequestSchema))
   async createRootUser(
     @Body() createUserDto: CreateUserRequest,
     @Res() res: Response,
-  ): Promise<ApiResponse<CreateRootUserResponse> | ApiErrorResponse> {
+  ): Promise<void> {
     const command = new CreateRootUserCommand(
       createUserDto.username,
       createUserDto.password,
       createUserDto.email,
     );
+
     const result: ApiResponse<CreateRootUserResponse> | ApiErrorResponse =
       await this.commandBus.execute(command);
 
-    res.setHeader('Content-Type', 'application/x-pem-file');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="root-user-${createUserDto.username}.pem"`,
+    if ('success' in result && result.success) {
+      // PEM 파일 다운로드로 응답
+      const filename = `sentinelkeeper-root-${createUserDto.username}.pem`;
+
+      res.setHeader('Content-Type', 'application/x-pem-file');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${filename}"`,
+      );
+      res.setHeader('X-Setup-Success', 'true');
+      res.setHeader('X-Setup-Message', encodeURIComponent(result.message));
+
+      res.send(result.data.pemKey);
+    } else {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(result);
+    }
+  }
+
+  @Post('root/password-reset')
+  @UsePipes(new ZodValidationPipe(ResetPasswordRequestSchema))
+  async resetRootPassword(
+    @Body() resetDto: ResetPasswordRequest,
+  ): Promise<ApiResponse<ResetPasswordResponse> | ApiErrorResponse> {
+    const command = new ResetRootPasswordCommand(
+      resetDto.pemContent,
+      resetDto.newPassword,
     );
-    const encodedResponse = Buffer.from(
-      JSON.stringify(result),
-    ).toString('base64');
-    res.setHeader('X-Setup-Response', encodedResponse);
 
-    res.send(result);
-
-    return result;
+    return await this.commandBus.execute(command);
   }
 
   @Get('health')
@@ -83,6 +100,7 @@ export class UsersController {
       endpoints: {
         rootStatus: 'GET /users/root/status',
         createRoot: 'POST /users/root',
+        resetPassword: 'POST /users/root/password-reset',
         health: 'GET /users/health',
       },
     };

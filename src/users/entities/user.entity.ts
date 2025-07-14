@@ -10,6 +10,7 @@ export const UserSchema = z.object({
   isSystemRoot: z.boolean(),
   recoveryKeyId: z.string().nullable(),
   recoveryKeyCreatedAt: z.date().nullable(),
+  encryptedRecoveryData: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -32,6 +33,7 @@ export class UserEntity {
     isSystemRoot?: boolean;
     recoveryKeyId?: string;
     recoveryKeyCreatedAt?: Date;
+    encryptedRecoveryData?: string;
   }): Omit<User, 'id' | 'createdAt' | 'updatedAt'> {
     return {
       username: data.username,
@@ -41,6 +43,7 @@ export class UserEntity {
       isSystemRoot: data.isSystemRoot || false,
       recoveryKeyId: data.recoveryKeyId || null,
       recoveryKeyCreatedAt: data.recoveryKeyCreatedAt || null,
+      encryptedRecoveryData: data.encryptedRecoveryData || null,
     };
   }
 
@@ -96,6 +99,9 @@ export class UserEntity {
   }
   get recoveryKeyCreatedAt(): Date | null {
     return this.data.recoveryKeyCreatedAt;
+  }
+  get encryptedRecoveryData(): string | null {
+    return this.data.encryptedRecoveryData;
   }
   get createdAt(): Date {
     return this.data.createdAt;
