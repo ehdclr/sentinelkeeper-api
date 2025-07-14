@@ -32,7 +32,9 @@ export class UserService {
         username: data.username,
         password: passwordHash,
         email: data.email,
-        isSystemAdmin: true,
+        isSystemRoot: true,
+        recoveryKeyId: null,
+        recoveryKeyCreatedAt: null,
       });
 
       // 저장 - 타입 단언으로 해결

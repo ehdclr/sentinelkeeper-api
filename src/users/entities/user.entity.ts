@@ -7,7 +7,9 @@ export const UserSchema = z.object({
   password: z.string(),
   email: z.string().nullable(),
   isActive: z.boolean(),
-  isSystemAdmin: z.boolean(),
+  isSystemRoot: z.boolean(),
+  recoveryKeyId: z.string().nullable(),
+  recoveryKeyCreatedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -27,14 +29,18 @@ export class UserEntity {
     username: string;
     password: string;
     email?: string;
-    isSystemAdmin?: boolean;
+    isSystemRoot?: boolean;
+    recoveryKeyId?: string;
+    recoveryKeyCreatedAt?: Date;
   }): Omit<User, 'id' | 'createdAt' | 'updatedAt'> {
     return {
       username: data.username,
       password: data.password,
       email: data.email || null,
       isActive: true,
-      isSystemAdmin: data.isSystemAdmin || false,
+      isSystemRoot: data.isSystemRoot || false,
+      recoveryKeyId: data.recoveryKeyId || null,
+      recoveryKeyCreatedAt: data.recoveryKeyCreatedAt || null,
     };
   }
 
@@ -50,12 +56,12 @@ export class UserEntity {
   }
 
   promoteToAdmin(): void {
-    this.data.isSystemAdmin = true;
+    this.data.isSystemRoot = true;
     this.data.updatedAt = new Date();
   }
 
   demoteFromAdmin(): void {
-    this.data.isSystemAdmin = false;
+    this.data.isSystemRoot = false;
     this.data.updatedAt = new Date();
   }
 
@@ -82,8 +88,14 @@ export class UserEntity {
   get isActive(): boolean {
     return this.data.isActive;
   }
-  get isSystemAdmin(): boolean {
-    return this.data.isSystemAdmin;
+  get isSystemRoot(): boolean {
+    return this.data.isSystemRoot;
+  }
+  get recoveryKeyId(): string | null {
+    return this.data.recoveryKeyId;
+  }
+  get recoveryKeyCreatedAt(): Date | null {
+    return this.data.recoveryKeyCreatedAt;
   }
   get createdAt(): Date {
     return this.data.createdAt;
