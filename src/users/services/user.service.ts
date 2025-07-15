@@ -7,7 +7,6 @@ import {
 import { UserRepository } from '../repositories/user.repository';
 import { BcryptHashService } from '@/common/services/hash.service';
 import { PemKeyService } from '@/common/services/pem-key.service';
-import { CryptoService } from '@/common/services/crypto.service';
 import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
@@ -18,7 +17,6 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly hashService: BcryptHashService,
     private readonly pemKeyService: PemKeyService,
-    private readonly cryptoService: CryptoService,
   ) {}
 
   async createRootUser(data: {
@@ -35,7 +33,7 @@ export class UserService {
         throw new ConflictException('시스템 관리자 계정이 이미 존재합니다.');
       }
 
-      // Ed25519 키쌍 생성 (Zero-Knowledge 방식)
+      // Ed25519 키쌍 생성
       const { publicKey, privateKeyPem } =
         await this.pemKeyService.generateEd25519RootKeyPair(
           data.username,
@@ -49,7 +47,7 @@ export class UserService {
         password: passwordHash,
         email: data.email,
         isSystemRoot: true,
-        publicKey, // 공개키만 DB에 저장
+        publicKey,
         publicKeyCreatedAt: new Date(),
       });
 
@@ -57,7 +55,7 @@ export class UserService {
 
       return {
         user,
-        privateKeyPem, // 클라이언트에게 제공될 개인키 PEM
+        privateKeyPem,
       };
     } catch (error) {
       this.logger.error(error);
@@ -65,10 +63,12 @@ export class UserService {
     }
   }
 
-  async resetPasswordWithEd25519(
+  /**
+   * Ed25519 PEM 파일로 비밀번호 리셋 (통합된 단일 메서드)
+   */
+  async resetRootPassword(
     pemContent: string,
     newPassword: string,
-    signature: string,
   ): Promise<{
     username: string;
     message: string;
@@ -79,7 +79,7 @@ export class UserService {
         throw new Error('유효하지 않은 Ed25519 PEM 파일입니다.');
       }
 
-      // 2. PEM에서 메타데이터 추출
+      // 2. 메타데이터 추출
       const metadata =
         this.pemKeyService.extractEd25519MetadataFromPem(pemContent);
 
@@ -89,74 +89,41 @@ export class UserService {
         throw new NotFoundException('루트 사용자를 찾을 수 없습니다.');
       }
 
-      // 4. 새 비밀번호 해시 생성
-      const newPasswordHash = await this.hashService.hash(newPassword);
+      // 4. Private Key 추출
+      const privateKey = this.pemKeyService.extractEd25519PrivateKeyFromPem(
+        pemContent,
+      );
 
-      // 5. 서명 데이터 생성
-      const signatureData =
-        this.pemKeyService.generatePasswordResetSignatureData(
-          metadata.username,
-          newPasswordHash,
-        );
-
-      // 6. Ed25519 서명 검증
-      const isValidSignature = this.cryptoService.verifyEd25519(
-        signatureData,
-        signature,
+      // 5. 키 쌍 일치 확인 (PEM 파일 인증)
+      const testData = `password-reset-${Date.now()}`;
+      const testSignature = this.pemKeyService.signEd25519(
+        testData,
+        privateKey,
+      );
+      const isValidKeyPair = this.pemKeyService.verifyEd25519(
+        testData,
+        testSignature,
         user.publicKey,
       );
 
-      if (!isValidSignature) {
-        throw new Error('Ed25519 서명 검증에 실패했습니다.');
+      if (!isValidKeyPair) {
+        throw new Error('PEM 파일의 개인키와 저장된 공개키가 일치하지 않습니다.');
       }
+
+      // 6. 새 비밀번호 해시 생성
+      const newPasswordHash = await this.hashService.hash(newPassword);
 
       // 7. 비밀번호 변경
       await this.userRepository.updatePassword(user.id, newPasswordHash);
+
+      this.logger.log(`루트 사용자 ${metadata.username}의 비밀번호가 성공적으로 변경되었습니다.`);
 
       return {
         username: user.username,
         message: '비밀번호가 성공적으로 변경되었습니다.',
       };
     } catch (error) {
-      this.logger.error('비밀번호 리셋 실패:', error);
-      throw error;
-    }
-  }
-
-  // 기존 방식 (호환성 유지)
-  async resetPasswordWithPemKey(
-    pemContent: string,
-    newPassword: string,
-  ): Promise<{
-    username: string;
-    message: string;
-  }> {
-    try {
-      // 1. PEM 키 파싱
-      const { keyId, masterKey } = this.pemKeyService.parsePemKey(pemContent);
-
-      // 2. DB에서 사용자 조회
-      const user = await this.userRepository.findByPublicKey(keyId);
-      if (!user || !user.publicKey) {
-        throw new NotFoundException('복구 키를 찾을 수 없습니다.');
-      }
-
-      // 3. 복구 데이터 복호화
-      const recoveryData = await this.pemKeyService.decryptRecoveryData(
-        user.publicKey,
-        masterKey,
-      );
-
-      // 4. 비밀번호 변경
-      const hashedPassword = await this.hashService.hash(newPassword);
-      await this.userRepository.updatePassword(user.id, hashedPassword);
-
-      return {
-        username: recoveryData.username,
-        message: '비밀번호가 성공적으로 변경되었습니다.',
-      };
-    } catch (error) {
-      this.logger.error('비밀번호 리셋 실패:', error);
+      this.logger.error('루트 비밀번호 리셋 실패:', error);
       throw error;
     }
   }

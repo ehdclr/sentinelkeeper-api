@@ -7,6 +7,7 @@ import { UserRepository } from './repositories/user.repository';
 import { DatabaseConfigService } from '../database/services/database-config.service';
 import { CreateRootUserHandler } from './handlers/create-root-user.handler';
 import { ResetRootPasswordHandler } from './handlers/reset-root-password.handler';
+import { ValidateRecoveryKeyHandler } from './handlers/validate-recovery-key.handler';
 import { CheckRootUserExistsHandler } from './handlers/check-root-user-exists.handler';
 import { UserCreatedHandler } from './handlers/user-created.handler';
 import { DatabaseModule } from '@/database/database.module';
@@ -18,7 +19,11 @@ import { SQLiteStrategy } from '@/database/strategies/sqlite.strategy';
 import { MySQLStrategy } from '@/database/strategies/mysql.strategy';
 import { CommonModule } from '@/common/common.module';
 
-const CommandHandlers = [CreateRootUserHandler, ResetRootPasswordHandler];
+const CommandHandlers = [
+  CreateRootUserHandler,
+  ResetRootPasswordHandler,
+  ValidateRecoveryKeyHandler,
+];
 const QueryHandlers = [CheckRootUserExistsHandler];
 const EventHandlers = [UserCreatedHandler];
 

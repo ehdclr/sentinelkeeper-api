@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { randomBytes } from 'crypto';
+import { generateKeyPairSync, sign, verify } from 'crypto';
 import { CryptoService } from './crypto.service';
 
 @Injectable()
@@ -8,178 +8,6 @@ export class PemKeyService {
   private readonly RECOVERY_DATA_VERSION = 'v2.0'; // Ed25519 버전
 
   constructor(private readonly cryptoService: CryptoService) {}
-
-  // ========================
-  // 기존 대칭키 방식 (호환성)
-  // ========================
-
-  /**
-   * 루트 사용자용 PEM 키 생성 (기존 방식)
-   */
-  async generateRootPemKey(
-    username: string,
-    email?: string,
-  ): Promise<{
-    pemKey: string;
-    recoveryKeyId: string;
-    encryptedRecoveryData: string;
-  }> {
-    try {
-      const keyId = randomBytes(16).toString('hex');
-      const masterKey = randomBytes(32).toString('hex'); // 64자리 hex 문자열
-      const createdAt = new Date().toISOString();
-
-      // 복구에 필요한 데이터
-      const recoveryData = {
-        username,
-        email,
-        version: this.RECOVERY_DATA_VERSION,
-        createdAt,
-      };
-
-      this.logger.debug('생성할 복구 데이터:', recoveryData);
-
-      // 단순 암호화 - 마스터키만 사용
-      const encryptedRecoveryData = this.cryptoService.encryptSimple(
-        JSON.stringify(recoveryData),
-        masterKey,
-      );
-
-      this.logger.debug(
-        '암호화된 복구 데이터 길이:',
-        encryptedRecoveryData.length,
-      );
-
-      // PEM 파일 생성
-      const pemKey = this.generatePemFileContent(
-        keyId,
-        masterKey,
-        username,
-        createdAt,
-      );
-
-      return {
-        pemKey,
-        recoveryKeyId: keyId,
-        encryptedRecoveryData, // 단순한 Base64 문자열
-      };
-    } catch (error) {
-      this.logger.error('PEM 키 생성 실패:', error);
-      throw new Error('PEM 키 생성에 실패했습니다.');
-    }
-  }
-
-  /**
-   * PEM 키 파싱 (기존 방식)
-   */
-  parsePemKey(pemContent: string): {
-    keyId: string;
-    masterKey: string;
-  } {
-    try {
-      if (!this.validatePemKey(pemContent)) {
-        throw new Error('유효하지 않은 PEM 키 형식입니다.');
-      }
-
-      const lines = pemContent.split('\n');
-
-      const keyId = lines
-        .find((line) => line.startsWith('Key-ID:'))
-        ?.split(': ')[1]
-        ?.trim();
-
-      const masterKey = lines
-        .find((line) => line.length === 64 && !line.includes(':'))
-        ?.trim();
-
-      if (!keyId || !masterKey) {
-        this.logger.error('PEM 키 파싱 실패 - keyId 또는 masterKey 없음');
-        throw new Error('유효하지 않은 PEM 키입니다.');
-      }
-
-      this.logger.debug('PEM 키 파싱 성공:', {
-        keyId,
-        masterKeyLength: masterKey.length,
-      });
-      return { keyId, masterKey };
-    } catch (error) {
-      this.logger.error('PEM 키 파싱 실패:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 복구 데이터 복호화 (기존 방식) - 개선된 에러 처리
-   */
-  async decryptRecoveryData(
-    encryptedData: string,
-    masterKey: string,
-  ): Promise<{
-    username: string;
-    email?: string;
-  }> {
-    try {
-      this.logger.debug('복호화 시작:', {
-        encryptedDataLength: encryptedData.length,
-        masterKeyLength: masterKey.length,
-      });
-
-      // 1. 복호화 시도
-      const recoveryData = this.cryptoService.decryptSimple(
-        encryptedData,
-        masterKey,
-      );
-
-      this.logger.debug('복호화 결과:', {
-        recoveryData: recoveryData.substring(0, 100) + '...',
-        length: recoveryData.length,
-      });
-
-      // 2. JSON 파싱 전 데이터 검증
-      if (!recoveryData || typeof recoveryData !== 'string') {
-        throw new Error('복호화 결과가 유효하지 않습니다.');
-      }
-
-      // 3. JSON 파싱 시도
-      let parsedData;
-      try {
-        parsedData = JSON.parse(recoveryData);
-      } catch (jsonError: any) {
-        this.logger.error('JSON 파싱 실패:', {
-          error: jsonError.message,
-          recoveryData: recoveryData.substring(0, 200),
-          charCodes: recoveryData
-            .split('')
-            .slice(0, 20)
-            .map((c) => c.charCodeAt(0)),
-        });
-        throw new Error(`JSON 파싱 실패: ${jsonError.message}`);
-      }
-
-      // 4. 파싱된 데이터 검증
-      if (!parsedData || typeof parsedData !== 'object') {
-        throw new Error('복호화된 데이터가 올바른 객체가 아닙니다.');
-      }
-
-      if (!parsedData.username) {
-        throw new Error('복호화된 데이터에 username이 없습니다.');
-      }
-
-      this.logger.debug('복구 데이터 복호화 성공:', {
-        username: parsedData.username,
-        email: parsedData.email,
-        version: parsedData.version,
-      });
-
-      return {
-        username: parsedData.username,
-        email: parsedData.email,
-      };
-    } catch (error: any) {
-      this.logger.error('복구 데이터 복호화 실패:', error);
-      throw new Error(`복구 데이터 복호화에 실패했습니다: ${error.message}`);
-    }
-  }
 
   // ========================
   // Ed25519 Zero-Knowledge 방식
@@ -196,12 +24,21 @@ export class PemKeyService {
     privateKeyPem: string;
   }> {
     try {
-      // CryptoService를 통해 Ed25519 키쌍 생성
-      const { publicKey, privateKey } =
-        this.cryptoService.generateEd25519KeyPair();
+      // Ed25519 키쌍 생성
+      const { publicKey, privateKey } = generateKeyPairSync('ed25519', {
+        publicKeyEncoding: {
+          type: 'spki',
+          format: 'pem',
+        },
+        privateKeyEncoding: {
+          type: 'pkcs8',
+          format: 'pem',
+        },
+      });
+
       const createdAt = new Date().toISOString();
 
-      // Private Key PEM 파일 생성 (클라이언트 다운로드용)
+      // Private Key PEM 파일 생성
       const privateKeyPem = this.generateEd25519PrivateKeyPem(
         privateKey,
         username,
@@ -210,8 +47,8 @@ export class PemKeyService {
       );
 
       return {
-        publicKey, // DB에 저장될 공개키
-        privateKeyPem, // 클라이언트에게 제공될 개인키 PEM 파일
+        publicKey,
+        privateKeyPem,
       };
     } catch (error) {
       this.logger.error('Ed25519 키쌍 생성 실패:', error);
@@ -359,6 +196,36 @@ ${privateKey}
       );
     } catch (error) {
       this.logger.error('PEM 파일 검증 실패:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Ed25519 서명 생성
+   */
+  signEd25519(data: string, privateKey: string): string {
+    try {
+      const signature = sign(null, Buffer.from(data, 'utf8'), privateKey);
+      return signature.toString('base64');
+    } catch (error) {
+      this.logger.error('Ed25519 서명 생성 실패:', error);
+      throw new Error('서명 생성 중 오류가 발생했습니다.');
+    }
+  }
+
+  /**
+   * Ed25519 서명 검증
+   */
+  verifyEd25519(data: string, signature: string, publicKey: string): boolean {
+    try {
+      return verify(
+        null,
+        Buffer.from(data, 'utf8'),
+        publicKey,
+        Buffer.from(signature, 'base64'),
+      );
+    } catch (error) {
+      this.logger.error('Ed25519 서명 검증 실패:', error);
       return false;
     }
   }

@@ -26,11 +26,10 @@ export class ResetRootPasswordHandler
     command: ResetRootPasswordCommand,
   ): Promise<ApiResponse<ResetPasswordResponse> | ApiErrorResponse> {
     try {
-      // Ed25519 방식 우선 시도
-      const result = await this.userService.resetPasswordWithEd25519(
+      // 통합된 리셋 메서드 사용
+      const result = await this.userService.resetRootPassword(
         command.pemContent,
         command.newPassword,
-        command.signature,
       );
 
       const responseData: ResetPasswordResponse = {

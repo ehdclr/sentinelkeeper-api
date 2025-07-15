@@ -62,3 +62,16 @@ export const UserHealthResponseSchema = z.object({
 });
 
 export type UserHealthResponse = z.infer<typeof UserHealthResponseSchema>;
+
+export const ValidateRecoveryKeyResponseSchema = z.object({
+  valid: z.boolean(),
+  username: z.string(),
+  email: z.string().nullable(),
+  createdAt: z.date(),
+  algorithm: z.string(),
+  publicKeyMatch: z.boolean(),
+  message: z.string(),
+});
+export type ValidateRecoveryKeyResponse = z.infer<
+  typeof ValidateRecoveryKeyResponseSchema
+>;

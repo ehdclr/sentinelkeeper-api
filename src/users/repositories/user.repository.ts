@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseConfigService } from '../../database/services/database-config.service';
 import { eq, count, sql } from 'drizzle-orm';
 import { getUsersTable } from '../schemas/user.schema'; // 스키마 파일 경로에 맞게 수정
-import { DatabaseConfig } from '@/database/types/database.type';
 
 @Injectable()
 export class UserRepository {

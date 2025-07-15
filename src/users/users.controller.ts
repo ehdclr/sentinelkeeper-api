@@ -11,6 +11,7 @@ import { Response } from 'express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CreateRootUserCommand } from './commands/create-root-user.command';
 import { ResetRootPasswordCommand } from './commands/reset-root-password.command';
+import { ValidateRecoveryKeyCommand } from './commands/validate-recovery-key.command';
 import { CheckRootUserExistsQuery } from './queries/check-root-user-exists.query';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { ResponseBuilder } from '../common/decorators/api-response.decorator';
@@ -23,6 +24,8 @@ import {
   CreateUserRequestSchema,
   ResetPasswordRequest,
   ResetPasswordRequestSchema,
+  ValidateRecoveryKeyRequest,
+  ValidateRecoveryKeyRequestSchema,
 } from './dto/user.request.dto';
 import {
   ApiResponse,
@@ -31,6 +34,7 @@ import {
 import {
   CreateRootUserResponse,
   ResetPasswordResponse,
+  ValidateRecoveryKeyResponse,
 } from './dto/user.response.dto';
 
 @Controller('users')
@@ -64,7 +68,7 @@ export class UsersController {
 
     if ('success' in result && result.success) {
       // Ed25519 Private Key PEM 파일 다운로드
-      const filename = `sentinelkeeper-root-${createUserDto.username}-ed25519.pem`;
+      const filename = `sentinelkeeper-root-ed25519.pem`;
 
       res.setHeader('Content-Type', 'application/x-pem-file');
       res.setHeader(
@@ -80,6 +84,15 @@ export class UsersController {
     }
   }
 
+  @Post('root/validate-recovery-key')
+  @UsePipes(new ZodValidationPipe(ValidateRecoveryKeyRequestSchema))
+  async validateRecoveryKey(
+    @Body() validateDto: ValidateRecoveryKeyRequest,
+  ): Promise<ApiResponse<ValidateRecoveryKeyResponse> | ApiErrorResponse> {
+    const command = new ValidateRecoveryKeyCommand(validateDto.pemContent);
+    return await this.commandBus.execute(command);
+  }
+
   @Post('root/password-reset')
   @UsePipes(new ZodValidationPipe(ResetPasswordRequestSchema))
   async resetRootPassword(
@@ -88,7 +101,6 @@ export class UsersController {
     const command = new ResetRootPasswordCommand(
       resetDto.pemContent,
       resetDto.newPassword,
-      resetDto.signature, // Ed25519 서명 추가
     );
 
     return await this.commandBus.execute(command);
