@@ -7,17 +7,7 @@ import {
   ApiResponse,
   ApiErrorResponse,
 } from '@/common/interfaces/response.interface';
-
-export interface CreateRootUserResponse {
-  user: {
-    username: string;
-    email: string | null;
-    isSystemRoot: boolean;
-    createdAt: Date;
-  };
-  pemKey: string;
-  message: string;
-}
+import { CreateRootUserResponse } from '../dto/user.response.dto';
 
 @CommandHandler(CreateRootUserCommand)
 export class CreateRootUserHandler
@@ -44,14 +34,14 @@ export class CreateRootUserHandler
           isSystemRoot: result.user.isSystemRoot,
           createdAt: result.user.createdAt,
         },
-        pemKey: result.pemKey,
+        privateKeyPem: result.privateKeyPem, // Ed25519 Private Key PEM
         message:
-          '루트 사용자가 성공적으로 생성되었습니다. PEM 키를 안전한 곳에 보관하세요.',
+          '루트 사용자가 성공적으로 생성되었습니다. Ed25519 개인키를 안전한 곳에 보관하세요.',
       };
 
       const response = ResponseBuilder.success(
         responseData,
-        '루트 사용자 생성 및 복구 키 생성이 완료되었습니다.',
+        '루트 사용자 생성 및 Ed25519 키쌍 생성이 완료되었습니다.',
         HttpStatus.CREATED,
       );
 

@@ -118,13 +118,13 @@ export class UserRepository {
     }
   }
 
-  async findByRecoveryKeyId(recoveryKeyId: string) {
+  async findByPublicKey(publicKey: string) {
     const db = await this.getDb();
     const users = this.getUsersSchema();
     const result = await db
       .select()
       .from(users)
-      .where(eq(users.recoveryKeyId, recoveryKeyId))
+      .where(eq(users.publicKey, publicKey))
       .limit(1);
 
     return result[0];
@@ -140,7 +140,6 @@ export class UserRepository {
         password: hashedPassword,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, id))
-      .returning();
+      .where(eq(users.id, id));
   }
 }

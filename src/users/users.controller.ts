@@ -28,8 +28,10 @@ import {
   ApiResponse,
   ApiErrorResponse,
 } from '../common/interfaces/response.interface';
-import { CreateRootUserResponse } from './handlers/create-root-user.handler';
-import { ResetPasswordResponse } from './handlers/reset-root-password.handler';
+import {
+  CreateRootUserResponse,
+  ResetPasswordResponse,
+} from './dto/user.response.dto';
 
 @Controller('users')
 export class UsersController {
@@ -61,8 +63,8 @@ export class UsersController {
       await this.commandBus.execute(command);
 
     if ('success' in result && result.success) {
-      // PEM 파일 다운로드로 응답
-      const filename = `sentinelkeeper-root-${createUserDto.username}.pem`;
+      // Ed25519 Private Key PEM 파일 다운로드
+      const filename = `sentinelkeeper-root-${createUserDto.username}-ed25519.pem`;
 
       res.setHeader('Content-Type', 'application/x-pem-file');
       res.setHeader(
@@ -72,7 +74,7 @@ export class UsersController {
       res.setHeader('X-Setup-Success', 'true');
       res.setHeader('X-Setup-Message', encodeURIComponent(result.message));
 
-      res.send(result.data.pemKey);
+      res.send(result.data.privateKeyPem);
     } else {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(result);
     }
@@ -86,6 +88,7 @@ export class UsersController {
     const command = new ResetRootPasswordCommand(
       resetDto.pemContent,
       resetDto.newPassword,
+      resetDto.signature, // Ed25519 서명 추가
     );
 
     return await this.commandBus.execute(command);

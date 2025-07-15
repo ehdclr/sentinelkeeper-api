@@ -11,6 +11,7 @@ export type CreateUserRequest = z.infer<typeof CreateUserRequestSchema>;
 export const ResetPasswordRequestSchema = z.object({
   pemContent: z.string(),
   newPassword: z.string(),
+  signature: z.string(),
 });
 
 export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>;

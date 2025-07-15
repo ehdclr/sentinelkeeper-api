@@ -8,9 +8,8 @@ export const UserSchema = z.object({
   email: z.string().nullable(),
   isActive: z.boolean(),
   isSystemRoot: z.boolean(),
-  recoveryKeyId: z.string().nullable(),
-  recoveryKeyCreatedAt: z.date().nullable(),
-  encryptedRecoveryData: z.string().nullable(),
+  publicKey: z.string().nullable(),
+  publicKeyCreatedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -31,9 +30,8 @@ export class UserEntity {
     password: string;
     email?: string;
     isSystemRoot?: boolean;
-    recoveryKeyId?: string;
-    recoveryKeyCreatedAt?: Date;
-    encryptedRecoveryData?: string;
+    publicKey?: string;
+    publicKeyCreatedAt?: Date;
   }): Omit<User, 'id' | 'createdAt' | 'updatedAt'> {
     return {
       username: data.username,
@@ -41,9 +39,8 @@ export class UserEntity {
       email: data.email || null,
       isActive: true,
       isSystemRoot: data.isSystemRoot || false,
-      recoveryKeyId: data.recoveryKeyId || null,
-      recoveryKeyCreatedAt: data.recoveryKeyCreatedAt || null,
-      encryptedRecoveryData: data.encryptedRecoveryData || null,
+      publicKey: data.publicKey || null,
+      publicKeyCreatedAt: data.publicKeyCreatedAt || null,
     };
   }
 
@@ -94,14 +91,11 @@ export class UserEntity {
   get isSystemRoot(): boolean {
     return this.data.isSystemRoot;
   }
-  get recoveryKeyId(): string | null {
-    return this.data.recoveryKeyId;
+  get publicKey(): string | null {
+    return this.data.publicKey;
   }
-  get recoveryKeyCreatedAt(): Date | null {
-    return this.data.recoveryKeyCreatedAt;
-  }
-  get encryptedRecoveryData(): string | null {
-    return this.data.encryptedRecoveryData;
+  get publicKeyCreatedAt(): Date | null {
+    return this.data.publicKeyCreatedAt;
   }
   get createdAt(): Date {
     return this.data.createdAt;

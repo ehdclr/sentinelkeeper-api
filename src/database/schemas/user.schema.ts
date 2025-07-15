@@ -6,8 +6,8 @@ export const CreateUserSchema = z.object({
   password: z.string().min(8),
   email: z.string().email().optional(),
   isSystemRoot: z.boolean().default(false),
-  recoveryKeyId: z.string().optional(),
-  recoveryKeyCreatedAt: z.date().optional(),
+  publicKey: z.string().optional(),
+  publicKeyCreatedAt: z.date().optional(),
 });
 
 // 사용자 응답 스키마
@@ -17,8 +17,8 @@ export const UserResponseSchema = z.object({
   email: z.string().nullable(),
   isActive: z.boolean(),
   isSystemRoot: z.boolean(),
-  recoveryKeyId: z.string().nullable(),
-  recoveryKeyCreatedAt: z.date().nullable(),
+  publicKey: z.string().nullable(),
+  publicKeyCreatedAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

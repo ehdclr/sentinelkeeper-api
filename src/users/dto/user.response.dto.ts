@@ -19,14 +19,12 @@ export const CreateRootUserResponseSchema = z.object({
 
 export interface CreateRootUserResponse {
   user: {
-    // id: number;
     username: string;
     email: string | null;
     isSystemRoot: boolean;
     createdAt: Date;
   };
-  pemKey: string;
-  pemFilePath?: string;
+  privateKeyPem: string;
   message: string;
 }
 
@@ -42,6 +40,13 @@ export const UserInfoResponseSchema = z.object({
 });
 
 export type UserInfoResponse = z.infer<typeof UserInfoResponseSchema>;
+
+export const ResetPasswordResponseSchema = z.object({
+  username: z.string(),
+  message: z.string(),
+  resetAt: z.string(),
+});
+export type ResetPasswordResponse = z.infer<typeof ResetPasswordResponseSchema>;
 
 // 서비스 헬스 응답
 export const UserHealthResponseSchema = z.object({

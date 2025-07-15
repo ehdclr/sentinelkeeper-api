@@ -26,9 +26,11 @@ export class ResetRootPasswordHandler
     command: ResetRootPasswordCommand,
   ): Promise<ApiResponse<ResetPasswordResponse> | ApiErrorResponse> {
     try {
-      const result = await this.userService.resetPasswordWithPemKey(
+      // Ed25519 방식 우선 시도
+      const result = await this.userService.resetPasswordWithEd25519(
         command.pemContent,
         command.newPassword,
+        command.signature,
       );
 
       const responseData: ResetPasswordResponse = {

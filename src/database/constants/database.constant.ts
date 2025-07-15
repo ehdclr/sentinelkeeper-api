@@ -30,9 +30,8 @@ export const SQL_QUERIES = {
         email TEXT UNIQUE,
         is_active INTEGER DEFAULT 1,
         is_system_root INTEGER DEFAULT 0,
-        recovery_key_id VARCHAR(32) NULL,
-        recovery_key_created_at TIMESTAMP NULL,
-        encrypted_recovery_data VARCHAR(255) NULL,
+        public_key TEXT NULL,
+        public_key_created_at TIMESTAMP NULL,
         created_at INTEGER DEFAULT (strftime('%s', 'now')),
         updated_at INTEGER DEFAULT (strftime('%s', 'now'))
       )
@@ -73,9 +72,8 @@ export const SQL_QUERIES = {
         email VARCHAR(255) UNIQUE,
         is_active BOOLEAN DEFAULT TRUE,
         is_system_root BOOLEAN DEFAULT FALSE,
-        recovery_key_id VARCHAR(32) NULL,
-        recovery_key_created_at TIMESTAMP NULL,
-        encrypted_recovery_data VARCHAR(255) NULL,
+        public_key TEXT NULL,
+        public_key_created_at TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       )
@@ -117,9 +115,8 @@ export const SQL_QUERIES = {
         email VARCHAR(255) UNIQUE,
         is_active TINYINT(1) DEFAULT 1,
         is_system_root TINYINT(1) DEFAULT 0,
-        recovery_key_id VARCHAR(32) NULL,
-        recovery_key_created_at TIMESTAMP NULL,
-        encrypted_recovery_data VARCHAR(255) NULL,
+        public_key TEXT NULL,
+        public_key_created_at TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
