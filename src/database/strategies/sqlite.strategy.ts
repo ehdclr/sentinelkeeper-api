@@ -90,6 +90,7 @@ export class SQLiteStrategy extends DatabaseStrategy {
     try {
       const queries = [
         SQL_QUERIES.SQLITE.CREATE_USERS,
+        SQL_QUERIES.SQLITE.CREATE_SESSIONS,
         SQL_QUERIES.SQLITE.CREATE_ROLES,
         SQL_QUERIES.SQLITE.CREATE_USER_ROLES,
         SQL_QUERIES.SQLITE.CREATE_SYSTEM_SETTINGS,

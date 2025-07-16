@@ -36,6 +36,17 @@ export const SQL_QUERIES = {
         updated_at INTEGER DEFAULT (strftime('%s', 'now'))
       )
     `,
+    CREATE_SESSIONS: `
+      CREATE TABLE IF NOT EXISTS sessions (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        data TEXT,
+        expires_at TIMESTAMP,
+        last_activity_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `,
     CREATE_ROLES: `
       CREATE TABLE IF NOT EXISTS roles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,6 +85,17 @@ export const SQL_QUERIES = {
         is_system_root BOOLEAN DEFAULT FALSE,
         public_key TEXT NULL,
         public_key_created_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `,
+    CREATE_SESSIONS: `
+      CREATE TABLE IF NOT EXISTS sessions (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        data TEXT,
+        expires_at TIMESTAMP,
+        last_activity_at TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       )
@@ -117,6 +139,17 @@ export const SQL_QUERIES = {
         is_system_root TINYINT(1) DEFAULT 0,
         public_key TEXT NULL,
         public_key_created_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `,
+    CREATE_SESSIONS: `
+      CREATE TABLE IF NOT EXISTS sessions (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        data TEXT,
+        expires_at TIMESTAMP,
+        last_activity_at TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )

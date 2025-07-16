@@ -121,6 +121,7 @@ export class MySQLStrategy extends DatabaseStrategy {
   async createTables(pool: DatabasePool): Promise<void> {
     try {
       const queries = [
+        SQL_QUERIES.MYSQL.CREATE_SESSIONS,
         SQL_QUERIES.MYSQL.CREATE_USERS,
         SQL_QUERIES.MYSQL.CREATE_ROLES,
         SQL_QUERIES.MYSQL.CREATE_USER_ROLES,

@@ -101,6 +101,7 @@ export class PostgresStrategy extends DatabaseStrategy {
     try {
       const queries = [
         SQL_QUERIES.POSTGRES.CREATE_USERS,
+        SQL_QUERIES.POSTGRES.CREATE_SESSIONS,
         SQL_QUERIES.POSTGRES.CREATE_ROLES,
         SQL_QUERIES.POSTGRES.CREATE_USER_ROLES,
         SQL_QUERIES.POSTGRES.CREATE_SYSTEM_SETTINGS,
