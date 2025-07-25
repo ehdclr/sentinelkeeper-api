@@ -10,6 +10,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     SetupModule,
     HealthModule,
     UsersModule,
+    AuthModule,
   ],
   providers: [
     // 인터셉터 순서: 요청 로깅 -> 성능 -> 응답

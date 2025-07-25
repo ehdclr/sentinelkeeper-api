@@ -36,10 +36,12 @@ import {
   ResetPasswordResponse,
   ValidateRecoveryKeyResponse,
 } from './dto/user.response.dto';
+import { UserService } from './services/user.service';
 
 @Controller('users')
 export class UsersController {
   constructor(
+    private readonly userService: UserService,
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
   ) {}

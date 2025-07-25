@@ -72,4 +72,3 @@ export const getSessionsTable = (dbType: string) => {
       throw new Error(`Unsupported database type: ${dbType}`);
   }
 };
-
