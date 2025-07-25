@@ -9,7 +9,10 @@ async function bootstrap() {
     const prefix = process.env.PREFIX || 'api';
     const version = process.env.VERSION || 'v1';
 
-    app.enableCors();
+    app.enableCors({
+      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      credentials: true,
+    });
     app.setGlobalPrefix(`${prefix}/${version}`);
     app.useGlobalFilters(new HttpExceptionFilter());
     const configService = app.get(DatabaseConfigService);

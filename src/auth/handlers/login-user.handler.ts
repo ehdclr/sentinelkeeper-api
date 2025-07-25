@@ -23,7 +23,7 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
     user: {
       id: string;
       username: string;
-      name: string;
+      email: string;
     };
   }> {
     console.log('🔍 로그인 시도:', command.username);
@@ -94,7 +94,7 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
       user: {
         id: user.id,
         username: user.username,
-        name: user.name,
+        email: user.email,
       },
     };
   }
