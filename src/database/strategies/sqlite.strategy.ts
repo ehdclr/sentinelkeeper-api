@@ -94,6 +94,7 @@ export class SQLiteStrategy extends DatabaseStrategy {
         SQL_QUERIES.SQLITE.CREATE_ROLES,
         SQL_QUERIES.SQLITE.CREATE_USER_ROLES,
         SQL_QUERIES.SQLITE.CREATE_SYSTEM_SETTINGS,
+        SQL_QUERIES.SQLITE.CREATE_AGENTS,
       ];
 
       for (const query of queries) {

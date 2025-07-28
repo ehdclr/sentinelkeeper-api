@@ -126,6 +126,7 @@ export class MySQLStrategy extends DatabaseStrategy {
         SQL_QUERIES.MYSQL.CREATE_ROLES,
         SQL_QUERIES.MYSQL.CREATE_USER_ROLES,
         SQL_QUERIES.MYSQL.CREATE_SYSTEM_SETTINGS,
+        SQL_QUERIES.MYSQL.CREATE_AGENTS,
       ];
 
       for (const query of queries) {

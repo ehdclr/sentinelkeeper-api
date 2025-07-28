@@ -105,6 +105,7 @@ export class PostgresStrategy extends DatabaseStrategy {
         SQL_QUERIES.POSTGRES.CREATE_ROLES,
         SQL_QUERIES.POSTGRES.CREATE_USER_ROLES,
         SQL_QUERIES.POSTGRES.CREATE_SYSTEM_SETTINGS,
+        SQL_QUERIES.POSTGRES.CREATE_AGENTS,
       ];
 
       for (const query of queries) {

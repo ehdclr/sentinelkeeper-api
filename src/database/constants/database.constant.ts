@@ -13,6 +13,7 @@ export const REQUIRED_TABLES = [
   'roles',
   'user_roles',
   'system_settings',
+  'agents',
 ] as const;
 
 export const SYSTEM_SETTINGS = {
@@ -67,6 +68,22 @@ export const SQL_QUERIES = {
         value TEXT
       )
     `,
+    CREATE_AGENTS: `
+      CREATE TABLE IF NOT EXISTS agents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        ip_address TEXT NOT NULL,
+        is_public BOOLEAN NOT NULL DEFAULT FALSE,
+        host_name TEXT,
+        registration_token TEXT,
+        status TEXT DEFAULT 'unregistered',
+        registered_at INTEGER DEFAULT (strftime('%s', 'now')),
+        created_at INTEGER DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+      )
+    `,
     CHECK_TABLE: `
       SELECT name FROM sqlite_master 
       WHERE type='table' AND name=?
@@ -118,6 +135,22 @@ export const SQL_QUERIES = {
       CREATE TABLE IF NOT EXISTS system_settings (
         key VARCHAR(100) PRIMARY KEY,
         value TEXT
+      )
+    `,
+    CREATE_AGENTS: `
+      CREATE TABLE IF NOT EXISTS agents (
+        id SERIAL PRIMARY KEY,
+        tenant_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        ip_address TEXT NOT NULL,
+        is_public BOOLEAN NOT NULL DEFAULT FALSE,
+        host_name TEXT,
+        registration_token TEXT,
+        status TEXT DEFAULT 'unregistered',
+        registered_at TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
       )
     `,
     CHECK_TABLE: `
@@ -174,6 +207,22 @@ export const SQL_QUERIES = {
       CREATE TABLE IF NOT EXISTS system_settings (
         key VARCHAR(100) PRIMARY KEY,
         value TEXT
+      )
+    `,
+    CREATE_AGENTS: `
+      CREATE TABLE IF NOT EXISTS agents (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        tenant_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        ip_address TEXT NOT NULL,
+        is_public BOOLEAN NOT NULL DEFAULT FALSE,
+        host_name TEXT,
+        registration_token TEXT,
+        status TEXT DEFAULT 'unregistered',
+        registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `,
     CHECK_TABLE: `
