@@ -24,6 +24,7 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
       id: string;
       username: string;
       email: string;
+      isSystemRoot: boolean;
     };
   }> {
     console.log('🔍 로그인 시도:', command.username);
@@ -95,6 +96,7 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand> {
         id: user.id,
         username: user.username,
         email: user.email,
+        isSystemRoot: user.isSystemRoot,
       },
     };
   }
